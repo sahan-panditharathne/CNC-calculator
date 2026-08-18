@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CNC Job Cost Calculator</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #d97706;
+      --accent-hover: #b45309;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 1rem; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 650px; background: var(--card); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+
+    h2 { margin-bottom: 1rem; color: var(--accent); font-size: 1.4rem; display: flex; justify-content: space-between; align-items: center; }
+    .section-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 1.2rem 0 0.5rem 0; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+    .full { grid-column: span 2; }
+
+    label { font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 0.25rem; }
+    input, select { width: 100%; background: #090d16; border: 1px solid var(--border); color: #fff; padding: 0.6rem; border-radius: 6px; font-size: 0.95rem; outline: none; }
+    input:focus, select:focus { border-color: var(--accent); }
+
+    .unit-group { display: flex; gap: 0.25rem; }
+    .unit-group input { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+    .unit-group select { border-top-left-radius: 0; border-bottom-left-radius: 0; width: 80px; flex-shrink: 0; }
+
+    .results { margin-top: 1.5rem; background: #090d16; padding: 1rem; border-radius: 8px; border: 1px solid var(--border); }
+    .result-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.4rem; color: var(--muted); }
+    .result-row.total { font-size: 1.25rem; font-weight: bold; color: var(--accent); border-top: 1px dashed var(--border); padding-top: 0.6rem; margin-top: 0.6rem; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>CNC Job Estimator</h2>
+
+  <!-- Material Presets -->
+  <label for="materialPreset">Saved Material Presets</label>
+  <select id="materialPreset" onchange="loadPreset()">
+    <option value="custom">-- Custom Material --</option>
+    <option value="eco8" selected>8mm Eco Board (4ft x 8ft - Rs. 7,500)</option>
+    <option value="eco12">12mm Eco Board (4ft x 8ft - Rs. 10,500)</option>
+    <option value="eco15">15mm Eco Board (4ft x 8ft - Rs. 12,975)</option>
+    <option value="eco18">18mm Eco Board (4ft x 8ft - Rs. 15,000)</option>
+  </select>
+
+  <div class="section-title">1. Stock Material Cost</div>
+  <div class="grid">
+    <div>
+      <label>Sheet Price (Rs.)</label>
+      <input type="number" id="sheetPrice" value="7500" oninput="calculate()">
+    </div>
+    <div>
+      <label>Sheet Dimensions (L × W)</label>
+      <div class="unit-group">
+        <input type="number" id="sheetL" value="4" oninput="calculate()">
+        <input type="number" id="sheetW" value="8" oninput="calculate()">
+        <select id="sheetUnit" onchange="calculate()">
+          <option value="ft" selected>ft</option>
+          <option value="in">in</option>
+          <option value="mm">mm</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">2. Job Material Area</div>
+  <div class="grid">
+    <div class="full">
+      <label>Cut Area Dimensions (L × W)</label>
+      <div class="unit-group">
+        <input type="number" id="jobL" value="300" oninput="calculate()">
+        <input type="number" id="jobW" value="400" oninput="calculate()">
+        <select id="jobUnit" onchange="calculate()">
+          <option value="mm" selected>mm</option>
+          <option value="in">in</option>
+          <option value="ft">ft</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">3. Machining & Setup</div>
+  <div class="grid-3">
+    <div>
+      <label>Time/Pass (min)</label>
+      <input type="number" id="timePerPass" value="1" oninput="calculate()">
+    </div>
+    <div>
+      <label>Passes</label>
+      <input type="number" id="numPasses" value="1" oninput="calculate()">
+    </div>
+    <div>
+      <label>Rate (Rs./min)</label>
+      <input type="number" id="machineRate" value="60" oninput="calculate()">
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top: 0.75rem;">
+    <div>
+      <label>Design / Flat Fee (Rs.)</label>
+      <input type="number" id="designFee" value="0" oninput="calculate()">
+    </div>
+    <div>
+      <label>Profit Markup (%)</label>
+      <input type="number" id="markup" value="20" oninput="calculate()">
+    </div>
+  </div>
+
+  <!-- Output Display -->
+  <div class="results">
+    <div class="result-row">
+      <span>Material Cost:</span>
+      <span id="outMatCost">Rs. 0.00</span>
+    </div>
+    <div class="result-row">
+      <span>Machining Cost (<span id="outTotalTime">0</span> min):</span>
+      <span id="outMachCost">Rs. 0.00</span>
+    </div>
+    <div class="result-row">
+      <span>Design / Flat Fee:</span>
+      <span id="outDesignFee">Rs. 0.00</span>
+    </div>
+    <div class="result-row">
+      <span>Subtotal Cost:</span>
+      <span id="outSubtotal">Rs. 0.00</span>
+    </div>
+    <div class="result-row">
+      <span>Markup Amount:</span>
+      <span id="outMarkup">Rs. 0.00</span>
+    </div>
+    <div class="result-row total">
+      <span>Final Quote:</span>
+      <span id="outTotal">Rs. 0.00</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const toMM = {
+    mm: 1,
+    in: 25.4,
+    ft: 304.8
+  };
+
+  const presets = {
+    eco8:  { price: 7500,  l: 4, w: 8, unit: 'ft' },
+    eco12: { price: 10500, l: 4, w: 8, unit: 'ft' },
+    eco15: { price: 12975, l: 4, w: 8, unit: 'ft' },
+    eco18: { price: 15000, l: 4, w: 8, unit: 'ft' }
+  };
+
+  function loadPreset() {
+    const val = document.getElementById('materialPreset').value;
+    if (val !== 'custom' && presets[val]) {
+      const p = presets[val];
+      document.getElementById('sheetPrice').value = p.price;
+      document.getElementById('sheetL').value = p.l;
+      document.getElementById('sheetW').value = p.w;
+      document.getElementById('sheetUnit').value = p.unit;
+      calculate();
+    }
+  }
+
+  function calculate() {
+    const sheetPrice = parseFloat(document.getElementById('sheetPrice').value) || 0;
+    const sheetL = parseFloat(document.getElementById('sheetL').value) || 0;
+    const sheetW = parseFloat(document.getElementById('sheetW').value) || 0;
+    const sheetUnit = document.getElementById('sheetUnit').value;
+
+    const jobL = parseFloat(document.getElementById('jobL').value) || 0;
+    const jobW = parseFloat(document.getElementById('jobW').value) || 0;
+    const jobUnit = document.getElementById('jobUnit').value;
+
+    const timePerPass = parseFloat(document.getElementById('timePerPass').value) || 0;
+    const numPasses = parseFloat(document.getElementById('numPasses').value) || 1;
+    const machineRate = parseFloat(document.getElementById('machineRate').value) || 0;
+
+    const designFee = parseFloat(document.getElementById('designFee').value) || 0;
+    const markupPct = parseFloat(document.getElementById('markup').value) || 0;
+
+    const sheetAreaMM2 = (sheetL * toMM[sheetUnit]) * (sheetW * toMM[sheetUnit]);
+    const jobAreaMM2 = (jobL * toMM[jobUnit]) * (jobW * toMM[jobUnit]);
+
+    let materialCost = 0;
+    if (sheetAreaMM2 > 0) {
+      const costPerMM2 = sheetPrice / sheetAreaMM2;
+      materialCost = costPerMM2 * jobAreaMM2;
+    }
+
+    const totalMachineTime = timePerPass * numPasses;
+    const machiningCost = totalMachineTime * machineRate;
+
+    const subtotal = materialCost + machiningCost + designFee;
+    const markupAmount = subtotal * (markupPct / 100);
+    const finalTotal = subtotal + markupAmount;
+
+    document.getElementById('outMatCost').innerText = `Rs. ${materialCost.toFixed(2)}`;
+    document.getElementById('outTotalTime').innerText = totalMachineTime;
+    document.getElementById('outMachCost').innerText = `Rs. ${machiningCost.toFixed(2)}`;
+    document.getElementById('outDesignFee').innerText = `Rs. ${designFee.toFixed(2)}`;
+    document.getElementById('outSubtotal').innerText = `Rs. ${subtotal.toFixed(2)}`;
+    document.getElementById('outMarkup').innerText = `Rs. ${markupAmount.toFixed(2)}`;
+    document.getElementById('outTotal').innerText = `Rs. ${Math.ceil(finalTotal).toLocaleString()}`;
+  }
+
+  // Load initial preset values into input fields
+  loadPreset();
+</script>
+
+</body>
+</html>
