@@ -64,13 +64,13 @@
   <div class="grid">
     <div>
       <label>Sheet Price (Rs.)</label>
-      <input type="number" id="sheetPrice" value="7500" oninput="calculate()">
+      <input type="number" id="sheetPrice" value="7500" onclick="this.select()" oninput="calculate()">
     </div>
     <div>
       <label>Sheet Dimensions (L × W)</label>
       <div class="unit-group">
-        <input type="number" id="sheetL" value="4" oninput="calculate()">
-        <input type="number" id="sheetW" value="8" oninput="calculate()">
+        <input type="number" id="sheetL" value="4" onclick="this.select()" oninput="calculate()">
+        <input type="number" id="sheetW" value="8" onclick="this.select()" oninput="calculate()">
         <select id="sheetUnit" onchange="calculate()">
           <option value="ft" selected>ft</option>
           <option value="in">in</option>
@@ -85,8 +85,8 @@
     <div class="full">
       <label>Cut Area Dimensions (L × W)</label>
       <div class="unit-group">
-        <input type="number" id="jobL" value="1219" oninput="calculate()">
-        <input type="number" id="jobW" value="400" oninput="calculate()">
+        <input type="number" id="jobL" value="1219" onclick="this.select()" oninput="calculate()">
+        <input type="number" id="jobW" value="400" onclick="this.select()" oninput="calculate()">
         <select id="jobUnit" onchange="calculate()">
           <option value="mm" selected>mm</option>
           <option value="in">in</option>
@@ -107,26 +107,26 @@
   <div class="grid-3">
     <div>
       <label>Time/Pass (min)</label>
-      <input type="number" id="timePerPass" value="5" oninput="calculate()">
+      <input type="number" id="timePerPass" value="5" onclick="this.select()" oninput="calculate()">
     </div>
     <div>
       <label>Passes</label>
-      <input type="number" id="numPasses" value="1" oninput="calculate()">
+      <input type="number" id="numPasses" value="1" onclick="this.select()" oninput="calculate()">
     </div>
     <div>
       <label>Rate (Rs./min)</label>
-      <input type="number" id="machineRate" value="60" oninput="calculate()">
+      <input type="number" id="machineRate" value="60" onclick="this.select()" oninput="calculate()">
     </div>
   </div>
 
   <div class="grid" style="margin-top: 0.75rem;">
     <div>
       <label>Design / Flat Fee (Rs.)</label>
-      <input type="number" id="designFee" value="0" oninput="calculate()">
+      <input type="number" id="designFee" value="0" onclick="this.select()" oninput="calculate()">
     </div>
     <div>
       <label>Profit Markup (%)</label>
-      <input type="number" id="markup" value="20" oninput="calculate()">
+      <input type="number" id="markup" value="20" onclick="this.select()" oninput="calculate()">
     </div>
   </div>
 
