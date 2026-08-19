@@ -98,13 +98,13 @@
   <div class="grid">
     <div>
       <label>Sheet Price (Rs.)</label>
-      <input type="number" id="sheetPrice" value="7500" onclick="this.select()" oninput="calculate()">
+      <input type="number" id="sheetPrice" value="7500" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
     </div>
     <div>
       <label>Sheet Dimensions (L × W)</label>
       <div class="unit-group">
-        <input type="number" id="sheetL" value="4" onclick="this.select()" oninput="calculate()">
-        <input type="number" id="sheetW" value="8" onclick="this.select()" oninput="calculate()">
+        <input type="number" id="sheetL" value="4" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
+        <input type="number" id="sheetW" value="8" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
         <select id="sheetUnit" onchange="calculate()">
           <option value="ft" selected>ft</option>
           <option value="in">in</option>
@@ -119,8 +119,8 @@
     <div class="full">
       <label>Cut Area Dimensions (L × W)</label>
       <div class="unit-group">
-        <input type="number" id="jobL" value="1219" onclick="this.select()" oninput="calculate()">
-        <input type="number" id="jobW" value="400" onclick="this.select()" oninput="calculate()">
+        <input type="number" id="jobL" value="1219" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
+        <input type="number" id="jobW" value="400" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
         <select id="jobUnit" onchange="calculate()">
           <option value="mm" selected>mm</option>
           <option value="in">in</option>
@@ -141,26 +141,26 @@
   <div class="grid-3">
     <div>
       <label>Time/Pass (min)</label>
-      <input type="number" id="timePerPass" value="5" onclick="this.select()" oninput="calculate()">
+      <input type="number" id="timePerPass" value="5" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
     </div>
     <div>
       <label>Passes</label>
-      <input type="number" id="numPasses" value="1" onclick="this.select()" oninput="calculate()">
+      <input type="number" id="numPasses" value="1" min="1" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
     </div>
     <div>
       <label>Rate (Rs./min)</label>
-      <input type="number" id="machineRate" value="60" onclick="this.select()" oninput="calculate()">
+      <input type="number" id="machineRate" value="60" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
     </div>
   </div>
 
   <div class="grid" style="margin-top: 0.75rem;">
     <div>
       <label>Design / Flat Fee (Rs.)</label>
-      <input type="number" id="designFee" value="0" onclick="this.select()" oninput="calculate()">
+      <input type="number" id="designFee" value="0" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
     </div>
     <div>
       <label>Profit Markup (%)</label>
-      <input type="number" id="markup" value="20" onclick="this.select()" oninput="calculate()">
+      <input type="number" id="markup" value="20" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
     </div>
   </div>
 
@@ -207,6 +207,23 @@
     eco15: { price: 12975, l: 4, w: 8, unit: 'ft' },
     eco18: { price: 15000, l: 4, w: 8, unit: 'ft' }
   };
+
+  function sanitizeNonNegativeNumber(input) {
+    if (!input || input.type !== 'number') return;
+
+    const raw = input.value;
+    if (raw === '') return;
+
+    const numericValue = Number(raw);
+    if (Number.isNaN(numericValue)) {
+      input.value = raw.replace(/^-+/, '');
+      return;
+    }
+
+    if (numericValue < 0) {
+      input.value = '0';
+    }
+  }
 
   function loadPreset() {
     const val = document.getElementById('materialPreset').value;
