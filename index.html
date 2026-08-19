@@ -41,6 +41,9 @@
     .rounded-info { font-size: 0.8rem; color: var(--accent); margin-top: 0.3rem; font-weight: 500; min-height: 1.1rem; }
 
     .results { margin-top: 1.5rem; background: #090d16; padding: 1rem; border-radius: 8px; border: 1px solid var(--border); }
+    .download-button { width: 100%; margin-top: 0.75rem; padding: 0.7rem 1rem; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+    .download-button:hover { background: var(--accent-hover); }
+    .download-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     .result-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.4rem; color: var(--muted); }
     .result-row.total { font-size: 1.25rem; font-weight: bold; color: var(--accent); border-top: 1px dashed var(--border); padding-top: 0.6rem; margin-top: 0.6rem; }
 
@@ -191,6 +194,7 @@
       <span id="outTotal">Rs. 0.00</span>
     </div>
   </div>
+  <button type="button" class="download-button" onclick="downloadSummary()">Download Calculation Summary</button>
 </div>
 
 <script>
@@ -207,6 +211,8 @@
     eco15: { price: 12975, l: 4, w: 8, unit: 'ft' },
     eco18: { price: 15000, l: 4, w: 8, unit: 'ft' }
   };
+
+  let latestCalculation = null;
 
   function sanitizeNonNegativeNumber(input) {
     if (!input || input.type !== 'number') return;
@@ -298,6 +304,30 @@
     const markupAmount = subtotal * (markupPct / 100);
     const finalTotal = subtotal + markupAmount;
 
+    latestCalculation = {
+      sheetPrice,
+      sheetL,
+      sheetW,
+      sheetUnit,
+      jobL,
+      jobW,
+      jobUnit,
+      effectiveJobLFt,
+      effectiveJobWFt,
+      roundToFt,
+      timePerPass,
+      numPasses,
+      machineRate,
+      totalMachineTime,
+      designFee,
+      markupPct,
+      materialCost,
+      machiningCost,
+      subtotal,
+      markupAmount,
+      finalTotal
+    };
+
     // Render results
     document.getElementById('outMatCost').innerText = `Rs. ${materialCost.toFixed(2)}`;
     document.getElementById('outTotalTime').innerText = totalMachineTime;
@@ -306,6 +336,55 @@
     document.getElementById('outSubtotal').innerText = `Rs. ${subtotal.toFixed(2)}`;
     document.getElementById('outMarkup').innerText = `Rs. ${markupAmount.toFixed(2)}`;
     document.getElementById('outTotal').innerText = `Rs. ${Math.ceil(finalTotal).toLocaleString()}`;
+  }
+
+  function downloadSummary() {
+    if (!latestCalculation) calculate();
+
+    const calculation = latestCalculation;
+    const now = new Date();
+    const dateText = now.toLocaleString();
+    const fileDate = now.toISOString().slice(0, 16).replace('T', '-').replace(':', '');
+    const materialName = document.getElementById('materialPreset').selectedOptions[0].text;
+    const roundedDimensions = calculation.roundToFt
+      ? `${calculation.effectiveJobLFt} ft x ${calculation.effectiveJobWFt} ft`
+      : 'Rounding disabled';
+    const summary = [
+      'CNC JOB QUOTE SUMMARY',
+      `Date: ${dateText}`,
+      '',
+      'MATERIAL',
+      `Preset: ${materialName}`,
+      `Sheet price: Rs. ${calculation.sheetPrice.toFixed(2)}`,
+      `Sheet dimensions: ${calculation.sheetL} ${calculation.sheetUnit} x ${calculation.sheetW} ${calculation.sheetUnit}`,
+      '',
+      'JOB AREA',
+      `Job dimensions: ${calculation.jobL} ${calculation.jobUnit} x ${calculation.jobW} ${calculation.jobUnit}`,
+      `Calculated dimensions: ${roundedDimensions}`,
+      '',
+      'MACHINING & SETUP',
+      `Time per pass: ${calculation.timePerPass} min`,
+      `Passes: ${calculation.numPasses}`,
+      `Machine rate: Rs. ${calculation.machineRate.toFixed(2)} per min`,
+      `Total machine time: ${calculation.totalMachineTime} min`,
+      `Design / flat fee: Rs. ${calculation.designFee.toFixed(2)}`,
+      '',
+      'COST BREAKDOWN',
+      `Material cost: Rs. ${calculation.materialCost.toFixed(2)}`,
+      `Machining cost: Rs. ${calculation.machiningCost.toFixed(2)}`,
+      `Subtotal: Rs. ${calculation.subtotal.toFixed(2)}`,
+      `Markup: ${calculation.markupPct}% (Rs. ${calculation.markupAmount.toFixed(2)})`,
+      '',
+      `FINAL QUOTE: Rs. ${Math.ceil(calculation.finalTotal).toLocaleString()}`,
+      ''
+    ].join('\n');
+
+    const file = new Blob([summary], { type: 'text/plain;charset=utf-8' });
+    const downloadLink = document.createElement('a');
+    downloadLink.href = URL.createObjectURL(file);
+    downloadLink.download = `cnc-quote-${fileDate}.txt`;
+    downloadLink.click();
+    URL.revokeObjectURL(downloadLink.href);
   }
 
   // Initial load
