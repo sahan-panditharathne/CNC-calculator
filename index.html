@@ -142,17 +142,17 @@
   <label for="materialPreset">Saved Material Presets</label>
   <select id="materialPreset" onchange="loadPreset()">
     <option value="custom">-- Custom Material --</option>
-    <option value="eco8" selected>8mm Eco Board With Transport (4ft x 8ft - Rs. 7,500)</option>
-    <option value="eco12">12mm Eco Board With Transport (4ft x 8ft - Rs. 10,500)</option>
-    <option value="eco15">15mm Eco Board With Transport (4ft x 8ft - Rs. 12,975)</option>
-    <option value="eco18">18mm Eco Board With Transport (4ft x 8ft - Rs. 15,000)</option>
+    <option value="eco8" selected>8mm Eco Board With Transport (4ft x 8ft - Rs. 9,500)</option>
+    <option value="eco12">12mm Eco Board With Transport (4ft x 8ft - Rs. 12,500)</option>
+    <option value="eco15">15mm Eco Board With Transport (4ft x 8ft - Rs. 14,975)</option>
+    <option value="eco18">18mm Eco Board With Transport (4ft x 8ft - Rs. 17,000)</option>
   </select>
 
   <div class="section-title">1. Stock Material Cost</div>
   <div class="grid">
     <div>
       <label>Sheet Price (Rs.)</label>
-      <input type="number" id="sheetPrice" value="7500" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
+      <input type="number" id="sheetPrice" value="9500" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
     </div>
     <div>
       <label>Sheet Dimensions (L × W)</label>
@@ -195,11 +195,11 @@
   <div class="grid-3">
     <div>
       <label>Baseline Time (min)</label>
-      <input type="number" id="timePerPass" value="20" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); syncSliderFromInput(); calculate()">
+      <input type="number" id="timePerPass" value="0" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); syncSliderFromInput(); calculate()">
     </div>
     <div>
       <label>Baseline Passes</label>
-      <input type="number" id="numPasses" value="2" min="1" max="8" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); syncSliderFromInput(); calculate()">
+      <input type="number" id="numPasses" value="1" min="1" max="8" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); syncSliderFromInput(); calculate()">
     </div>
     <div>
       <label>Rate (Rs./min)</label>
@@ -268,10 +268,10 @@
   };
 
   const presets = {
-    eco8:  { price: 7500,  l: 4, w: 8, unit: 'ft' },
-    eco12: { price: 10500, l: 4, w: 8, unit: 'ft' },
-    eco15: { price: 12975, l: 4, w: 8, unit: 'ft' },
-    eco18: { price: 15000, l: 4, w: 8, unit: 'ft' }
+    eco8:  { price: 9500,  l: 4, w: 8, unit: 'ft' },
+    eco12: { price: 12500, l: 4, w: 8, unit: 'ft' },
+    eco15: { price: 14975, l: 4, w: 8, unit: 'ft' },
+    eco18: { price: 17000, l: 4, w: 8, unit: 'ft' }
   };
 
   let latestCalculation = null;
