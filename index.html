@@ -38,6 +38,57 @@
     .checkbox-group input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
     .checkbox-group label { font-size: 0.85rem; color: var(--text); cursor: pointer; margin-bottom: 0; }
 
+    /* Slider styling with discrete step ticks */
+    .slider-group { margin-top: 0.8rem; background: #090d16; padding: 0.85rem 1rem 0.6rem 1rem; border-radius: 6px; border: 1px solid var(--border); }
+    .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .slider-header label { margin-bottom: 0; color: var(--text); font-weight: 500; }
+    .slider-value { font-size: 0.95rem; font-weight: bold; color: var(--accent); }
+    
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .ticks-container {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 4px;
+      margin-top: 6px;
+    }
+
+    .tick-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .tick-mark {
+      width: 3px;
+      height: 8px;
+      background-color: var(--border);
+      border-radius: 2px;
+    }
+
+    .tick-step.active .tick-mark {
+      background-color: var(--accent);
+      height: 10px;
+    }
+
+    .tick-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+      user-select: none;
+    }
+
+    .tick-step.active .tick-label {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
     .rounded-info { font-size: 0.8rem; color: var(--accent); margin-top: 0.3rem; font-weight: 500; min-height: 1.1rem; }
 
     .results { margin-top: 1.5rem; background: #090d16; padding: 1rem; border-radius: 8px; border: 1px solid var(--border); }
@@ -143,16 +194,28 @@
   <div class="section-title">3. Machining & Setup</div>
   <div class="grid-3">
     <div>
-      <label>Time/Pass (min)</label>
-      <input type="number" id="timePerPass" value="5" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
+      <label>Baseline Time (min)</label>
+      <input type="number" id="timePerPass" value="20" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); syncSliderFromInput(); calculate()">
     </div>
     <div>
-      <label>Passes</label>
-      <input type="number" id="numPasses" value="1" min="1" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
+      <label>Baseline Passes</label>
+      <input type="number" id="numPasses" value="2" min="1" max="8" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); syncSliderFromInput(); calculate()">
     </div>
     <div>
       <label>Rate (Rs./min)</label>
       <input type="number" id="machineRate" value="60" min="0" onclick="this.select()" oninput="sanitizeNonNegativeNumber(this); calculate()">
+    </div>
+  </div>
+
+  <!-- Dynamic Pass Adjustment Slider with Ticks -->
+  <div class="slider-group">
+    <div class="slider-header">
+      <label for="passSlider">Adjust Calculation Passes:</label>
+      <span class="slider-value" id="sliderValDisplay">1 pass</span>
+    </div>
+    <input type="range" id="passSlider" min="1" max="8" step="1" value="1" oninput="calculate()">
+    <div class="ticks-container" id="ticksContainer">
+      <!-- Generated via JavaScript -->
     </div>
   </div>
 
@@ -198,7 +261,6 @@
 </div>
 
 <script>
-  // Conversion multipliers to feet (ft)
   const toFeet = {
     mm: 0.00328084,
     in: 1 / 12,
@@ -213,6 +275,31 @@
   };
 
   let latestCalculation = null;
+
+  function renderTicks(activeVal) {
+    const ticksContainer = document.getElementById('ticksContainer');
+    ticksContainer.innerHTML = '';
+    
+    for (let i = 1; i <= 8; i++) {
+      const stepDiv = document.createElement('div');
+      stepDiv.className = `tick-step ${i === activeVal ? 'active' : ''}`;
+      stepDiv.onclick = () => {
+        document.getElementById('passSlider').value = i;
+        calculate();
+      };
+
+      const mark = document.createElement('div');
+      mark.className = 'tick-mark';
+
+      const label = document.createElement('span');
+      label.className = 'tick-label';
+      label.innerText = i;
+
+      stepDiv.appendChild(mark);
+      stepDiv.appendChild(label);
+      ticksContainer.appendChild(stepDiv);
+    }
+  }
 
   function sanitizeNonNegativeNumber(input) {
     if (!input || input.type !== 'number') return;
@@ -231,6 +318,15 @@
     }
   }
 
+  function syncSliderFromInput() {
+    let numPassesInput = parseInt(document.getElementById('numPasses').value, 10) || 1;
+    if (numPassesInput > 8) {
+      numPassesInput = 8;
+      document.getElementById('numPasses').value = 8;
+    }
+    document.getElementById('passSlider').value = numPassesInput;
+  }
+
   function loadPreset() {
     const val = document.getElementById('materialPreset').value;
     if (val !== 'custom' && presets[val]) {
@@ -244,22 +340,18 @@
   }
 
   function calculate() {
-    // Stock inputs
     const sheetPrice = parseFloat(document.getElementById('sheetPrice').value) || 0;
     const sheetL = parseFloat(document.getElementById('sheetL').value) || 0;
     const sheetW = parseFloat(document.getElementById('sheetW').value) || 0;
     const sheetUnit = document.getElementById('sheetUnit').value;
 
-    // Job inputs
     const jobL = parseFloat(document.getElementById('jobL').value) || 0;
     const jobW = parseFloat(document.getElementById('jobW').value) || 0;
     const jobUnit = document.getElementById('jobUnit').value;
     const roundToFt = document.getElementById('roundToFt').checked;
 
-    // Convert stock sheet area to square feet (ft²)
     const sheetAreaFt2 = (sheetL * toFeet[sheetUnit]) * (sheetW * toFeet[sheetUnit]);
 
-    // Calculate job dimensions in feet
     let rawJobLFt = jobL * toFeet[jobUnit];
     let rawJobWFt = jobW * toFeet[jobUnit];
     
@@ -269,7 +361,6 @@
     const roundedDisplay = document.getElementById('roundedDisplay');
 
     if (roundToFt && (jobL > 0 || jobW > 0)) {
-      // Only round up if the value has a significant fractional part (tolerance for floating point precision)
       const epsilon = 0.0001;
       const fracL = rawJobLFt % 1;
       const fracW = rawJobWFt % 1;
@@ -283,22 +374,27 @@
 
     const jobAreaFt2 = effectiveJobLFt * effectiveJobWFt;
 
-    // Cost calculations
     let materialCost = 0;
     if (sheetAreaFt2 > 0) {
       const costPerFt2 = sheetPrice / sheetAreaFt2;
       materialCost = costPerFt2 * jobAreaFt2;
     }
 
-    const timePerPass = parseFloat(document.getElementById('timePerPass').value) || 0;
-    const numPasses = parseFloat(document.getElementById('numPasses').value) || 1;
+    const baselineTime = parseFloat(document.getElementById('timePerPass').value) || 0;
+    const baselinePasses = parseFloat(document.getElementById('numPasses').value) || 1;
+    const activePasses = parseInt(document.getElementById('passSlider').value, 10) || 1;
+    
+    document.getElementById('sliderValDisplay').innerText = `${activePasses} ${activePasses === 1 ? 'pass' : 'passes'}`;
+    renderTicks(activePasses);
+
+    const timePerSinglePass = baselinePasses > 0 ? (baselineTime / baselinePasses) : 0;
+    const totalMachineTime = timePerSinglePass * activePasses;
+
     const machineRate = parseFloat(document.getElementById('machineRate').value) || 0;
+    const machiningCost = totalMachineTime * machineRate;
 
     const designFee = parseFloat(document.getElementById('designFee').value) || 0;
     const markupPct = parseFloat(document.getElementById('markup').value) || 0;
-
-    const totalMachineTime = timePerPass * numPasses;
-    const machiningCost = totalMachineTime * machineRate;
 
     const subtotal = materialCost + machiningCost + designFee;
     const markupAmount = subtotal * (markupPct / 100);
@@ -315,8 +411,8 @@
       effectiveJobLFt,
       effectiveJobWFt,
       roundToFt,
-      timePerPass,
-      numPasses,
+      timePerSinglePass,
+      activePasses,
       machineRate,
       totalMachineTime,
       designFee,
@@ -328,9 +424,8 @@
       finalTotal
     };
 
-    // Render results
     document.getElementById('outMatCost').innerText = `Rs. ${materialCost.toFixed(2)}`;
-    document.getElementById('outTotalTime').innerText = totalMachineTime;
+    document.getElementById('outTotalTime').innerText = totalMachineTime.toFixed(1);
     document.getElementById('outMachCost').innerText = `Rs. ${machiningCost.toFixed(2)}`;
     document.getElementById('outDesignFee').innerText = `Rs. ${designFee.toFixed(2)}`;
     document.getElementById('outSubtotal').innerText = `Rs. ${subtotal.toFixed(2)}`;
@@ -363,10 +458,9 @@
       `Calculated dimensions: ${roundedDimensions}`,
       '',
       'MACHINING & SETUP',
-      `Time per pass: ${calculation.timePerPass} min`,
-      `Passes: ${calculation.numPasses}`,
+      `Calculated passes: ${calculation.activePasses}`,
       `Machine rate: Rs. ${calculation.machineRate.toFixed(2)} per min`,
-      `Total machine time: ${calculation.totalMachineTime} min`,
+      `Total machine time: ${calculation.totalMachineTime.toFixed(1)} min`,
       `Design / flat fee: Rs. ${calculation.designFee.toFixed(2)}`,
       '',
       'COST BREAKDOWN',
@@ -387,7 +481,6 @@
     URL.revokeObjectURL(downloadLink.href);
   }
 
-  // Initial load
   loadPreset();
 </script>
 
